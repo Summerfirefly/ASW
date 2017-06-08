@@ -40,10 +40,6 @@
       <HintPath>..\..\..\..\.steam\steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\System.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Xml">
-      <HintPath>..\..\..\..\.steam\steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\System.Xml.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>dlls\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
@@ -69,9 +65,7 @@
     <Compile Include="ModGlobal.cs" />
     <Compile Include="ModUIManager.cs" />
     <Compile Include="ModuleAntiSubmarineWeapon.cs" />
-    <Compile Include="ModuleDepthCharge.cs" />
     <Compile Include="ModuleDepthChargeProjector.cs" />
-    <Compile Include="ModuleTO.cs" />
     <Compile Include="PIDSystem.cs" />
     <Compile Include="SonarSystem.cs" />
   </ItemGroup>
