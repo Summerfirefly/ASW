@@ -15,7 +15,7 @@ namespace AntiSubmarineWeapon
         private static int setAllTorpedosTemp = 1;
         private static bool isHide = false;
 
-        public static Rect settingsWindowRect = new Rect(100, 100, 500, 80);
+        public static Rect settingsWindowRect = new Rect(100, 100, 400, 80);
 
         public void Awake()
         {
