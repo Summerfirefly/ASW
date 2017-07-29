@@ -49,8 +49,8 @@
     <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>dlls\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="BahaTurret, Version=0.2.1.1, Culture=neutral, PublicKeyToken=null">
-      <HintPath>dlls\BahaTurret.dll</HintPath>
+    <Reference Include="BDArmory, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>dlls\BDArmory.dll</HintPath>
     </Reference>
     <Reference Include="MDCData, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>dlls\MDCData.dll</HintPath>

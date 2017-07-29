@@ -1,7 +1,7 @@
 ﻿using System;
 using KSP.Localization;
 using UnityEngine;
-using BahaTurret;
+using BDArmory;
 
 namespace AntiSubmarineWeapon
 {
