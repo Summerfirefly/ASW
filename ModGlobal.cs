@@ -1,16 +1,8 @@
-﻿using System;
-
-namespace AntiSubmarineWeapon
+﻿namespace AntiSubmarineWeapon
 {
     internal static class ModGlobal
     {
         internal static bool drawSettingsWindow = false;
-        internal static bool loadedSceneIsOn
-        {
-            get
-            {
-                return HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor;
-            }
-        }
+        internal static bool LoadedSceneIsOn => HighLogic.LoadedSceneIsFlight || HighLogic.LoadedSceneIsEditor;
     }
 }

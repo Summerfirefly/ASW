@@ -1,88 +1,97 @@
 ﻿using System;
 using UnityEngine;
-using AntiSubmarineWeapon;
 
 namespace AntiSubmarineWeapon
 {
     public class BombSystem
     {
-        private int r;
-        ASWData Data = new ASWData();
+        private int _r;
+        private readonly AswData _data = new AswData();
+        
         public void ChargeDataWrite(int errorRange, float maxDetonateDepth, float maxDepth)
         {
-            Data.errorRange = errorRange;
-            Data.maxDetonateDepth = maxDetonateDepth;
-            Data.maxDepth = maxDepth;
+            _data.ErrorRange = errorRange;
+            _data.MaxDetonateDepth = maxDetonateDepth;
+            _data.MaxDepth = maxDepth;
         }
+        
         //public void ChargeDataWrite(float autoDestroyDepth)
         //{
-        //    Data.maxDetonateDepth = autoDestroyDepth;
+        //    _data.MaxDetonateDepth = autoDestroyDepth;
         //}
-        public void ran()
+        
+        public void Ran()
         {
-            System.Random ran = new System.Random();
-            r = ran.Next(-(int)Data.errorRange, (int)Data.errorRange);
+            var ran = new System.Random();
+            _r = ran.Next(-_data.ErrorRange, _data.ErrorRange);
         }
+        
         public bool Bomb(float hight,float destoryDepth)
         {
             if (hight < 0)
             {
-                if (Math.Abs(hight) > Math.Abs(destoryDepth) + r || Math.Abs(hight) > Math.Abs(Data.maxDetonateDepth))
-                    return true;
-                else
-                    return false;
+                return Math.Abs(hight) > Math.Abs(destoryDepth) + _r ||
+                       Math.Abs(hight) > Math.Abs(_data.MaxDetonateDepth);
             }
-            else
-                return false;
+            
+            return false;
         }
     }
+    
     public class Buoyancy
     {
-        ASWData Data = new ASWData();
+        private readonly AswData _data = new AswData();
+        
         public void BuoyancyDataWrite(bool volumebuoyancy, float volume, float buoyancyForce)
         {
-            Data.volumeBuoyancy = volumebuoyancy;
-            Data.volume = volume;
-            Data.buoyancyForce = buoyancyForce;
+            _data.VolumeBuoyancy = volumebuoyancy;
+            _data.Volume = volume;
+            _data.BuoyancyForce = buoyancyForce;
         }
+        
         public Vector3 Force(float hight)
         {
-            if (hight < 0 && Math.Abs(hight)>Math.Abs(Data.maxDepth))
+            if (hight < 0 && Math.Abs(hight)>Math.Abs(_data.MaxDepth))
             {
-                if (Data.volumeBuoyancy)
-                    return new Vector3(0, Data.volume * 10, 0);
-                else
-                {
-                    if (!(Data.buoyancyForce == -1))
-                        return new Vector3(0, Data.buoyancyForce, 0);
-                    else if (Data.volumeBuoyancy)
-                        return new Vector3(0, Data.buoyancyForce, 0);
-                    else
-                        return Vector3.zero;
-                }
-            }
-            else
+                if (_data.VolumeBuoyancy)
+                    return new Vector3(0, _data.Volume * 10, 0);
+                
+                if (Math.Abs(_data.BuoyancyForce+1) >= 1e-7)
+                    return new Vector3(0, _data.BuoyancyForce, 0);
+
+                if (_data.VolumeBuoyancy)
+                    return new Vector3(0, _data.BuoyancyForce, 0);
+
                 return Vector3.zero;
+            }
+
+            return Vector3.zero;
         }
     }
     public class RotationSystem
     {
-        ASWData Data = new ASWData();
+        private readonly AswData _data = new AswData();
+        
         public void RotationData(Vector3 airMaxTorque, Vector3 waterMaxTorque, Vector3 airCocf, Vector3 waterCocf)
         {
-            Data.airMaxTorque = airMaxTorque;
-            Data.waterMaxTorque = waterMaxTorque;
-            Data.airCocf = airCocf;
-            Data.waterCocf = waterCocf;
+            _data.AirMaxTorque = airMaxTorque;
+            _data.WaterMaxTorque = waterMaxTorque;
+            _data.AirCocf = airCocf;
+            _data.WaterCocf = waterCocf;
         }
-        public Vector3 Torque(Vector3 TransformUp, Vector3 velocity, float hight)
+        
+        public Vector3 Torque(Vector3 transformUp, Vector3 velocity, float hight)
         {
             if (hight >= 0)
             {
-                return new Vector3(Vector3.Cross(TransformUp, velocity).x * Data.airMaxTorque.x, Vector3.Cross(TransformUp, velocity).y * Data.airMaxTorque.y + 0.1f, Vector3.Cross(TransformUp, velocity).z * Data.airMaxTorque.z);
+                return new Vector3(Vector3.Cross(transformUp, velocity).x * _data.AirMaxTorque.x,
+                    Vector3.Cross(transformUp, velocity).y * _data.AirMaxTorque.y + 0.1f,
+                    Vector3.Cross(transformUp, velocity).z * _data.AirMaxTorque.z);
             }
-            else
-                return new Vector3(Vector3.Cross(TransformUp, velocity).x * Data.waterMaxTorque.x, Vector3.Cross(TransformUp, velocity).y * Data.waterMaxTorque.y + 0.1f, Vector3.Cross(TransformUp, velocity).z * Data.waterMaxTorque.z);
+
+            return new Vector3(Vector3.Cross(transformUp, velocity).x * _data.WaterMaxTorque.x,
+                Vector3.Cross(transformUp, velocity).y * _data.WaterMaxTorque.y + 0.1f,
+                Vector3.Cross(transformUp, velocity).z * _data.WaterMaxTorque.z);
         }
     }
 }

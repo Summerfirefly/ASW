@@ -1,52 +1,56 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Sonar
+namespace AntiSubmarineWeapon
 {
     public class SonarSystem
     {
-        System.Random Ran = new System.Random();
-        private Vector2 Position;
-        private Vector2 Screen;
-        static float[] r = new float[3];
-        private Vector2[] originalRound = new Vector2[360];
-        static Vector2[,] detectionCirclevertex = new Vector2[3, 360];
+        private readonly System.Random _ran = new System.Random();
+        private Vector2 _position;
+        private Vector2 _screen;
+        private static readonly float[] R = new float[3];
+        private readonly Vector2[] _originalRound = new Vector2[360];
+        private static readonly Vector2[,] DetectionCirclevertex = new Vector2[3, 360];
+        
         public void Rposition(Vector2 px,Vector2 screen)
         {
-            r[0] = 0.125f;
-            r[1] = 0.375f;
-            r[2] = 0.625f;
-            this.Screen = screen;
-            Position = px;
+            R[0] = 0.125f;
+            R[1] = 0.375f;
+            R[2] = 0.625f;
+            _screen = screen;
+            _position = px;
         }
         public void Round()
         {
-            for (int i = 0; i < 360; i++)
+            for (var i = 0; i < 360; i++)
             {
-                originalRound[i] = new Vector2((float)Math.Cos((2*Math.PI/360)*i),(float)Math.Sin((2*Math.PI/360)*i));
+                _originalRound[i] = new Vector2((float)Math.Cos((2*Math.PI/360)*i),(float)Math.Sin((2*Math.PI/360)*i));
             }
         }
         public Vector2[,] DrawOuterCircle()
         {
-            for (int i = 0; i < 3; i++)
+            for (var i = 0; i < 3; i++)
             {
-                for (int k = 0; k < 360; k++)
+                for (var k = 0; k < 360; k++)
                 {
-                    detectionCirclevertex[i, k] = ((200 * r[i] + ran(i)) / (200 * r[i])) * 200f * r[i] * (originalRound[k]) + Position;
+                    DetectionCirclevertex[i, k] = ((200 * R[i] + Ran(i)) / (200 * R[i])) * 200f * R[i] * (_originalRound[k]) + _position;
                 }
             }
-            return detectionCirclevertex;
+            return DetectionCirclevertex;
         }
-        private short ran(int Type)
+        private short Ran(int type)
         {
-            if (Type == 0)
-                return (short)Ran.Next(-3, 3);
-            if (Type == 1)
-                return (short)Ran.Next(-4, 4);
-            if (Type == 2)
-                return (short)Ran.Next(-5, 5);
-            else
-                return 0;
+            switch (type)
+            {
+                case 0:
+                    return (short)_ran.Next(-3, 3);
+                case 1:
+                    return (short)_ran.Next(-4, 4);
+                case 2:
+                    return (short)_ran.Next(-5, 5);
+                default:
+                    return 0;
+            }
         }
     }
 }

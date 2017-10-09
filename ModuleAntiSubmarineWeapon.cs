@@ -1,33 +1,29 @@
 ﻿using System;
 using KSP.Localization;
 using UnityEngine;
-using BahaTurret;
-using AntiSubmarineWeapon;
+using BDArmory.Parts;
 
 namespace AntiSubmarineWeapon
 {
-    class ModuleAntiSubmarineWeapon : PartModule
+    public class ModuleAntiSubmarineWeapon : PartModule
     {
         [KSPField(isPersistant = false)]
         public string type = "";
 
-        //[KSPField]
-        //public float maxDetonateDepth = 0f;
+        [KSPField(isPersistant = false)]
+        public float maxDepth;
 
         [KSPField(isPersistant = false)]
-        public float maxDepth = 0f;
+        public int errorRange;
 
         [KSPField(isPersistant = false)]
-        public int errorRange = 0;
+        public bool volumebuoyancy;
 
         [KSPField(isPersistant = false)]
-        public bool volumebuoyancy = false;
+        public float volum;
 
         [KSPField(isPersistant = false)]
-        public float volum = 0f;
-
-        [KSPField(isPersistant = false)]
-        public float buoyancyForce = 0f;
+        public float buoyancyForce;
 
         [KSPField(isPersistant = false)]
         public Vector3 airMaxTorque = Vector3.zero;
@@ -42,19 +38,16 @@ namespace AntiSubmarineWeapon
         public Vector3 waterCocf = Vector3.zero;
 
         [KSPField(isPersistant = false)]
-        public bool autoReload = false;
+        public bool autoReload;
 
         [KSPField(isPersistant = false)]
-        public float reloadTime = 0f;
+        public float reloadTime;
 
         [KSPField(isPersistant = false)]
-        public float ejectForce = 0f;
+        public float ejectForce;
 
         [KSPField(isPersistant = false)]
         public bool zeroThrustSink = true;
-
-        //[KSPField]
-        //public float curiseDepth = 0f;
 
         [KSPField(isPersistant = false)]
         public string guideType = "Inertial";
@@ -72,16 +65,10 @@ namespace AntiSubmarineWeapon
         public Vector3 pidTorqueInfo = Vector3.zero;
 
         [KSPField(isPersistant = false)]
-        public float accuracy = 0f;
+        public float accuracy;
 
         [KSPField(isPersistant = false)]
-        public float lineLength = 0f;
-
-        //[KSPField]
-        //public float agor = 0f;
-
-        //[KSPField]
-        //public float aror = 0f;
+        public float lineLength;
 
         [KSPField(isPersistant = false)]
         public string sonoraType = "";
@@ -96,170 +83,156 @@ namespace AntiSubmarineWeapon
         public Vector2 sonoraMaxRecognition = Vector2.zero;
 
         [KSPField(isPersistant = false)]
-        public float recognitionAccuracy = 0f;
+        public float recognitionAccuracy;
 
-        private ASWData Data;
-        private BombSystem Bomb;
-        private Buoyancy buoyancy;
-        private RotationSystem Rota;
-        private PIDSystem PIDA ;
-        private PIDSystem PIDT;
+        private AswData _data;
+        private BombSystem _bomb;
+        private Buoyancy _buoyancy;
+        private RotationSystem _rota;
+        private PidSystem _pida ;
+        private PidSystem _pidt;
 
-
-        //private bool isDepthCharge = false;
-        private UI_Control depthField,depth;
-        private MissileLauncher missileLauncher;
-        private Rigidbody partRigidbodyValue;
-        private Rigidbody partRigidbody
+        private UI_Control _depthField;
+        private MissileLauncher _missileLauncher;
+        private Rigidbody _partRigidbodyValue;
+        
+        private Rigidbody PartRigidbody
         {
             get
             {
-                if (!partRigidbodyValue)
-                    partRigidbodyValue = part.GetComponent<Rigidbody>();
-                return partRigidbodyValue;
+                if (!_partRigidbodyValue)
+                    _partRigidbodyValue = part.GetComponent<Rigidbody>();
+                return _partRigidbodyValue;
             }
         }
-        float height
-        {
-            get
-            {
-                return (float)vessel.mainBody.GetAltitude(vessel.GetWorldPos3D());
-            }
-        }
+        
+        private float Height => (float)vessel.mainBody.GetAltitude(vessel.GetWorldPos3D());
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Destroy Depth"), UI_FloatRange(controlEnabled = true, maxValue = 500, minValue = 25, scene = UI_Scene.All, stepIncrement = 1f)]
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Destroy Depth"),
+         UI_FloatRange(controlEnabled = true, maxValue = 500, minValue = 25, scene = UI_Scene.All, stepIncrement = 1f)]
         public float autoDestroyDepth = 1.0f;
 
-        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Cruise Depth"), UI_FloatRange(controlEnabled = true, maxValue = 200, minValue = 1, scene = UI_Scene.All, stepIncrement = 1f)]
+        [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Cruise Depth"),
+         UI_FloatRange(controlEnabled = true, maxValue = 200, minValue = 1, scene = UI_Scene.All, stepIncrement = 1f)]
         public float cruiseDepth = 1.0f;
 
-        //private bool IsDepthCharge()
-        //{
-        //    if(Data.type == "DepthCharge")
-        //        return true;
-        //    else
-        //        return false;
-
-        //}
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
 
-            Data = new ASWData();
-            Data.type = type;
+            _data = new AswData {Type = type};
 
-            if (Data.type == "DepthCharge")
+            switch (_data.Type)
             {
-                Bomb = new BombSystem();
-                Bomb.ChargeDataWrite(errorRange,maxDepth,maxDepth);
-                Bomb.ran();
+                case "DepthCharge":
+                    _bomb = new BombSystem();
+                    _bomb.ChargeDataWrite(errorRange,maxDepth,maxDepth);
+                    _bomb.Ran();
 
-                buoyancy = new Buoyancy();
-                buoyancy.BuoyancyDataWrite(volumebuoyancy,volum,buoyancyForce);
+                    _buoyancy = new Buoyancy();
+                    _buoyancy.BuoyancyDataWrite(volumebuoyancy,volum,buoyancyForce);
 
-                Rota = new RotationSystem();
-                Rota.RotationData(airMaxTorque, waterMaxTorque, airCocf, waterCocf);
+                    _rota = new RotationSystem();
+                    _rota.RotationData(airMaxTorque, waterMaxTorque, airCocf, waterCocf);
 
-                missileLauncher = GetComponent<MissileLauncher>();
-                if(missileLauncher == null)
-                    Debug.LogError("Failed when find the MissileLauncher!");
+                    _missileLauncher = GetComponent<MissileLauncher>();
+                    if(_missileLauncher == null)
+                        Debug.LogError("Failed when find the MissileLauncher!");
                 
-                depthField = Fields["autoDestroyDepth"].uiControlFlight;
+                    _depthField = Fields["autoDestroyDepth"].uiControlFlight;
 
-                Fields["cruiseDepth"].guiActive = false;
-                Fields["cruiseDepth"].guiActiveEditor = false;
-                Fields["autoDestroyDepth"].guiActive = true;
-                Fields["autoDestroyDepth"].guiActiveEditor = true;
-                Fields["autoDestroyDepth"].guiName = Localizer.Format("#autoLOC_NAS_Editor_detonateDepth");
+                    Fields["cruiseDepth"].guiActive = false;
+                    Fields["cruiseDepth"].guiActiveEditor = false;
+                    Fields["autoDestroyDepth"].guiActive = true;
+                    Fields["autoDestroyDepth"].guiActiveEditor = true;
+                    Fields["autoDestroyDepth"].guiName = Localizer.Format("#autoLOC_NAS_Editor_detonateDepth");
 
-                ((UI_FloatRange)Fields["autoDestroyDepth"].uiControlEditor).maxValue = this.maxDepth;
-                ((UI_FloatRange)Fields["autoDestroyDepth"].uiControlFlight).maxValue = this.maxDepth;
+                    ((UI_FloatRange)Fields["autoDestroyDepth"].uiControlEditor).maxValue = maxDepth;
+                    ((UI_FloatRange)Fields["autoDestroyDepth"].uiControlFlight).maxValue = maxDepth;
+                    break;
+                case "Torpedo":
+                    _pida = new PidSystem();
+                    _pida.PidDataWrite(maxRotate.z, pidAngleInfo.x, pidAngleInfo.y, pidAngleInfo.z);
+                    _pidt = new PidSystem();
+                    _pidt.PidDataWrite(maxTorque.x, pidTorqueInfo.x, pidTorqueInfo.y, pidTorqueInfo.z);
+
+                    _buoyancy = new Buoyancy();
+                    _buoyancy.BuoyancyDataWrite(volumebuoyancy, volum, buoyancyForce);
+
+                    _rota = new RotationSystem();
+                    _rota.RotationData(airMaxTorque, waterMaxTorque, airCocf, waterCocf);
+
+                    _missileLauncher = GetComponent<MissileLauncher>();
+                    if (_missileLauncher == null)
+                        Debug.LogError("Failed when find the MissileLauncher!");
+
+                    Fields["autoDestroyDepth"].guiActive = false;
+                    Fields["autoDestroyDepth"].guiActiveEditor = false;
+                    Fields["cruiseDepth"].guiActive = true;
+                    Fields["cruiseDepth"].guiActiveEditor = true;
+                    Fields["cruiseDepth"].guiName = Localizer.Format("#autoLOC_NAS_Editor_cruiseDepth");
+
+                    ((UI_FloatRange)Fields["cruiseDepth"].uiControlEditor).maxValue = maxDepth - 2;
+                    ((UI_FloatRange)Fields["cruiseDepth"].uiControlFlight).maxValue = maxDepth - 2;
+                    break;
+                default:
+                    Debug.LogWarning("[NAS-ASW]Neither depth charge nor torpedo!");
+                    break;
             }
-            else if (Data.type == "Torpedo")
-            {
-                PIDA = new PIDSystem();
-                PIDA.PIDDataWrite(maxRotate.z, pidAngleInfo.x, pidAngleInfo.y, pidAngleInfo.z);
-                PIDT = new PIDSystem();
-                PIDT.PIDDataWrite(maxTorque.x, pidTorqueInfo.x, pidTorqueInfo.y, pidTorqueInfo.z);
 
-                buoyancy = new Buoyancy();
-                buoyancy.BuoyancyDataWrite(volumebuoyancy, volum, buoyancyForce);
-
-                Rota = new RotationSystem();
-                Rota.RotationData(airMaxTorque, waterMaxTorque, airCocf, waterCocf);
-
-                missileLauncher = GetComponent<MissileLauncher>();
-                if (missileLauncher == null)
-                    Debug.LogError("Failed when find the MissileLauncher!");
-
-                Fields["autoDestroyDepth"].guiActive = false;
-                Fields["autoDestroyDepth"].guiActiveEditor = false;
-                Fields["cruiseDepth"].guiActive = true;
-                Fields["cruiseDepth"].guiActiveEditor = true;
-                Fields["cruiseDepth"].guiName = Localizer.Format("#autoLOC_NAS_Editor_cruiseDepth");
-
-                ((UI_FloatRange)Fields["cruiseDepth"].uiControlEditor).maxValue = this.maxDepth - 2;
-                ((UI_FloatRange)Fields["cruiseDepth"].uiControlFlight).maxValue = this.maxDepth - 2;
-            }
-
-            this.autoDestroyDepth = ModUIManager.setAllDepthCharges;
-            this.cruiseDepth = ModUIManager.setAllTorpedos;
+            autoDestroyDepth = ModUiManager.setAllDepthCharges;
+            cruiseDepth = ModUiManager.setAllTorpedos;
         }
 
         public override void OnUpdate()
         {
             base.OnUpdate();
-            if (Data.type == "DepthCharge")
-            {
-                if (HighLogic.LoadedSceneIsFlight)
-                {
-                    if (missileLauncher.HasFired)
-                    {
-                        if (depthField.controlEnabled)
-                            depthField.controlEnabled = false;
-                        if (Bomb.Bomb(height, autoDestroyDepth))
-                        {
-                            Debug.Log("DepthCharge Bombed At " + height + "m on " + vessel.mainBody.name);
-                            missileLauncher.Detonate();
-                            part.temperature = part.maxTemp * 2;
-                        }
-                    }
-                }
-                //else
-                //{
-                //    Bomb.ChargeDataWrite(autoDestroyDepth);
-                //}
-            }
+            
+            if (_data.Type != "DepthCharge") return;
+            if (!HighLogic.LoadedSceneIsFlight) return;
+            if (!_missileLauncher.HasFired) return;
+            
+            if (_depthField.controlEnabled)
+                _depthField.controlEnabled = false;
+            
+            if (!_bomb.Bomb(Height, autoDestroyDepth)) return;
+            
+            Debug.Log("DepthCharge Bombed At " + Height + "m on " + vessel.mainBody.name);
+            _missileLauncher.Detonate();
+            part.temperature = part.maxTemp * 2;
         }
 
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
-            if (Data.type == "DepthCharge")
+            switch (_data.Type)
             {
-                if (HighLogic.LoadedSceneIsFlight)
-                {
-                    if (missileLauncher.HasFired)
+                case "DepthCharge":
+                    if (HighLogic.LoadedSceneIsFlight)
                     {
-                        if (height<0)
-                            partRigidbody.AddForce(FlightGlobals.getUpAxis() * buoyancy.Force(height).y);
-                        partRigidbody.AddTorque(Rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, height));
+                        if (_missileLauncher.HasFired)
+                        {
+                            if (Height<0)
+                                PartRigidbody.AddForce(FlightGlobals.getUpAxis() * _buoyancy.Force(Height).y);
+                            PartRigidbody.AddTorque(_rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, Height));
+                        }
                     }
-                }
-            }
-            else if (Data.type == "Torpedo")
-            {
-                if ((vessel.mainBody.GetAltitude(vessel.GetWorldPos3D())) < 0 && (vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()))>-Math.Abs( maxDepth))
-                {
-                    float angle = PIDA.PIDControl(-cruiseDepth, (float)(vessel.mainBody.GetAltitude(vessel.GetWorldPos3D())), TimeWarp.fixedDeltaTime);
-                    //partRigidbody.angularVelocity = new Vector3(0, PID2.PIDControl(0.785f, k, kI, kD, angle, (float)(((Vector3.Angle(transform.right, vessel.transform.position)) - 45) * (Math.PI / 180)), TimeWarp.fixedDeltaTime), 0);
-                    float Torque = PIDT.PIDControl(angle, (90 - Vector3.Angle(this.part.transform.forward, FlightGlobals.getUpAxis(this.part.transform.position))), TimeWarp.fixedDeltaTime);
-                    Vector3 horizonPitchAxis = Vector3.Cross(FlightGlobals.getUpAxis(transform.position), transform.forward).normalized;
-                    partRigidbody.AddTorque(Rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, height));
-                    partRigidbody.AddTorque(-horizonPitchAxis * Torque);
-                    //partRigidbody.AddTorque(Rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, height));
-                    partRigidbody.AddForce(FlightGlobals.getUpAxis() * buoyancy.Force(height).y);
-                }
+                    break;
+                case "Torpedo":
+                    if (vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()) < 0 &&
+                        vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()) > -Math.Abs(maxDepth))
+                    {
+                        var angle = _pida.PidControl(-cruiseDepth, (float) vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()), TimeWarp.fixedDeltaTime);
+                        var torque = _pidt.PidControl(angle, 90 - Vector3.Angle(part.transform.forward, FlightGlobals.getUpAxis(part.transform.position)), TimeWarp.fixedDeltaTime);
+                        var horizonPitchAxis = Vector3.Cross(FlightGlobals.getUpAxis(transform.position), transform.forward).normalized;
+                        PartRigidbody.AddTorque(_rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, Height));
+                        PartRigidbody.AddTorque(-horizonPitchAxis * torque);
+                        PartRigidbody.AddForce(FlightGlobals.getUpAxis() * _buoyancy.Force(Height).y);
+                    }
+                    break;
+                default:
+                    Debug.LogWarning("[NAS-ASW]Neither depth charge nor torpedo!");
+                    break;
             }
         }
     }

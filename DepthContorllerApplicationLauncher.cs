@@ -1,5 +1,4 @@
-﻿using System;
-using KSP.UI.Screens;
+﻿using KSP.UI.Screens;
 using UnityEngine;
 
 namespace AntiSubmarineWeapon
@@ -7,9 +6,9 @@ namespace AntiSubmarineWeapon
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class DepthContorllerApplicationLauncher : MonoBehaviour
     {
-        public static ApplicationLauncherButton btn = null;
+        public static ApplicationLauncherButton btn;
 
-        private static bool drawGUI
+        private static bool DrawGui
         {
             get
             {
@@ -23,7 +22,7 @@ namespace AntiSubmarineWeapon
 
         public void Awake()
         {
-            GameEvents.onGUIApplicationLauncherReady.Add(onLauncherReady);
+            GameEvents.onGUIApplicationLauncherReady.Add(OnLauncherReady);
         }
 
         public void OnDestroy()
@@ -31,24 +30,26 @@ namespace AntiSubmarineWeapon
             if (btn != null)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(btn);
-                btn = null;
             }
+            
+            btn = null;
         }
 
-        public void onLauncherReady()
+        public void OnLauncherReady()
         {
-            ApplicationLauncher.AppScenes visibleIn = ApplicationLauncher.AppScenes.FLIGHT;
+            const ApplicationLauncher.AppScenes visibleIn = ApplicationLauncher.AppScenes.FLIGHT;
 
             if (!ApplicationLauncher.Ready)
                 return;
 
             if (btn == null)
             {
-                btn = ApplicationLauncher.Instance.AddModApplication(onToggleApp, onToggleApp, null, null, null, null, visibleIn,
-                    (Texture)GameDatabase.Instance.GetTexture("NAS/Plugins/NASIcon", false));
+                btn = ApplicationLauncher.Instance.AddModApplication(OnToggleApp, OnToggleApp, null, null, null, null,
+                    visibleIn,
+                    GameDatabase.Instance.GetTexture("NAS/Plugins/NASIcon", false));
             }
 
-            if (drawGUI)
+            if (DrawGui)
             {
                 btn.SetTrue(false);
             }
@@ -58,9 +59,9 @@ namespace AntiSubmarineWeapon
             }
         }
 
-        public void onToggleApp()
+        public void OnToggleApp()
         {
-            drawGUI = !drawGUI;
+            DrawGui = !DrawGui;
         }
     }
 }

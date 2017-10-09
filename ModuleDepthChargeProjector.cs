@@ -1,11 +1,6 @@
-﻿using System;
-using BahaTurret;
-using UnityEngine;
-using AntiSubmarineWeapon;
-
-namespace AntiSubmarineWeapon
+﻿namespace AntiSubmarineWeapon
 {
-    class ModuleDepthChargeProjector : PartModule
+    public class ModuleDepthChargeProjector : PartModule
     {
         public enum ProjectorType
         {
@@ -17,12 +12,12 @@ namespace AntiSubmarineWeapon
         public ProjectorType projectorType = ProjectorType.KGun;
 
         [KSPField]
-        public bool autoReload = false;
+        public bool autoReload;
 
         [KSPField]
-        public float reloadTime = 0;
+        public float reloadTime;
 
         [KSPField]
-        public float ejectForce = 0;
+        public float ejectForce;
     }
 }
