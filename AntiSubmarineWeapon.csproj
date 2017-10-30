@@ -10,9 +10,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AntiSubmarineWeapon</RootNamespace>
     <AssemblyName>AntiSubmarineWeapon</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <LangVersion>6</LangVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -41,22 +42,33 @@
     <Compile Include="ModUiManager.cs" />
     <Compile Include="ModuleAntiSubmarineWeapon.cs" />
     <Compile Include="ModuleDepthChargeProjector.cs" />
+    <Compile Include="NASCategory.cs" />
+    <Compile Include="NASCategoryModule.cs" />
+    <Compile Include="PartLoaderExtensions.cs" />
     <Compile Include="PidSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SonarSystem.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>dlls\Assembly-CSharp.dll</HintPath>
+    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="BDArmory, Version=0.3.0.0, Culture=neutral, PublicKeyToken=null">
+    <Reference Include="Assembly-CSharp-firstpass">
+      <HintPath>..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="BDArmory, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>dlls\BDArmory.dll</HintPath>
     </Reference>
-    <Reference Include="MDCData, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>dlls\MDCData.dll</HintPath>
+    <Reference Include="KSPAssets">
+      <HintPath>..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\KSPAssets.dll</HintPath>
     </Reference>
-    <Reference Include="System, Version=2.0.5.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e">
-      <HintPath>dlls\System.dll</HintPath>
+    <Reference Include="System">
+      <HintPath>..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\System.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml">
+      <HintPath>..\..\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_Data\Managed\System.Xml.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>dlls\UnityEngine.dll</HintPath>
