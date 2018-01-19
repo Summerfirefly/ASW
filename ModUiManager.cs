@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using KSP.Localization;
-using BDArmory;
+using BDArmory.Parts;
 
 namespace AntiSubmarineWeapon
 {
