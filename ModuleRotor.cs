@@ -2,14 +2,18 @@
 
 public class ModuleRotor : PartModule
 {
-    [KSPField]
     private Transform[] RotateTransforms = null;
     private float rotateAngle;
 
+    // These were plain fields in NAS 0.7.0, so the part cfg values (RPM, direction, torpedo) were ignored.
+    [KSPField]
     public string RotateTransformName = "RotateTransform";
 
+    [KSPField]
     public bool IsForwardRotation = true;
+    [KSPField]
     public float rotateRPM = 30.0f;
+    [KSPField]
     public bool torpedo = false;
 
 
@@ -20,6 +24,8 @@ public class ModuleRotor : PartModule
 
     void FixedUpdate()
     {
+        if (!HighLogic.LoadedSceneIsFlight || vessel == null || RotateTransforms == null) return;
+
         if (vessel.parts.Count == 1 && (!torpedo || vessel.Splashed)) //!torpedo || (torpedo && splashed)
         {
             rotateAngle = rotateRPM * 6 * TimeWarp.fixedDeltaTime; //DPS = RPM * 360 / 60 = RPM * 6
@@ -31,7 +37,8 @@ public class ModuleRotor : PartModule
 
             for (int i = 0; i < RotateTransforms.Length; i++)
             {
-                RotateTransforms[i].Rotate(0, 0, rotateAngle);
+                if (RotateTransforms[i] != null)
+                    RotateTransforms[i].Rotate(0, 0, rotateAngle);
             }
         }
     }
