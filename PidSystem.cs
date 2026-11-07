@@ -26,6 +26,7 @@ namespace AntiSubmarineWeapon
         private readonly PidData _data = new PidData();
         public float PidControl(float target, float present, float deltaTime)
         {
+            if (deltaTime <= 0f) return 0f; // avoid NaN torque from the derivative term
             _data.Error = target - present;
             _data.Integral = _data.Integral + _data.Error * deltaTime;
             _data.Derivative = (_data.Error - _data.Lasterror) / deltaTime;
