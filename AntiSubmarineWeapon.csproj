@@ -1,93 +1,67 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    AntiSubmarineWeapon (NAS anti-submarine plugin) for KSP 1.12.x + BDArmory Plus 1.13.
+    Build:   dotnet build -c Release  (or MSBuild 17+)
+    Point KSPDir at a KSP 1.12.x install (or set the KSPDIR environment variable):
+      dotnet build -c Release -p:KSPDir="C:\KSP"
+    BDArmory.dll is taken from $(KSPDir)\GameData\BDArmory\Plugins unless overridden:
+      dotnet build -c Release -p:KSPDir="C:\KSP" -p:BDArmoryDll="C:\path\to\BDArmory.dll"
+  -->
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E6FE265E-3352-4272-ADCF-36E7127EA4BC}</ProjectGuid>
-    <ProjectTypeGuids>{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TargetFramework>net48</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AntiSubmarineWeapon</RootNamespace>
     <AssemblyName>AntiSubmarineWeapon</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <LangVersion>6</LangVersion>
-    <TargetFrameworkProfile />
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <DebugType>portable</DebugType>
+    <Deterministic>true</Deterministic>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+    <ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <KSPManaged Condition=" '$(KSPManaged)' == '' ">$(KSPDir)\KSP_x64_Data\Managed</KSPManaged>
+    <BDArmoryDll Condition=" '$(BDArmoryDll)' == '' ">$(KSPDir)\GameData\BDArmory\Plugins\BDArmory.dll</BDArmoryDll>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
+    <Compile Include="AswData.cs" />
     <Compile Include="DepthChargeLibs.cs" />
     <Compile Include="DepthContorllerApplicationLauncher.cs" />
-    <Compile Include="AswData.cs" />
+    <Compile Include="FlagWave.cs" />
     <Compile Include="ModGlobal.cs" />
     <Compile Include="ModUiManager.cs" />
     <Compile Include="ModuleAntiSubmarineWeapon.cs" />
     <Compile Include="ModuleDepthChargeProjector.cs" />
+    <Compile Include="ModuleRotor.cs" />
     <Compile Include="NASCategory.cs" />
     <Compile Include="NASCategoryModule.cs" />
     <Compile Include="PartLoaderExtensions.cs" />
     <Compile Include="PidSystem.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ModuleRotor.cs" />
     <Compile Include="SonarSystem.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+
   <ItemGroup>
-    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dlls\Assembly-CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dlls\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="BDArmory, Version=1.1.0.23471, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dlls\BDArmory.dll</HintPath>
-    </Reference>
-    <Reference Include="KSPAssets, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dlls\KSPAssets.dll</HintPath>
-    </Reference>
-    <Reference Include="System">
-      <HintPath>dlls\System.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Xml">
-      <HintPath>dlls\System.Xml.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dlls\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>dlls\UnityEngine.UI.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" Condition="!Exists('$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8')" />
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp"><HintPath>$(KSPManaged)\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Assembly-CSharp-firstpass"><HintPath>$(KSPManaged)\Assembly-CSharp-firstpass.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine"><HintPath>$(KSPManaged)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(KSPManaged)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.PhysicsModule"><HintPath>$(KSPManaged)\UnityEngine.PhysicsModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(KSPManaged)\UnityEngine.IMGUIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.AnimationModule"><HintPath>$(KSPManaged)\UnityEngine.AnimationModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(KSPManaged)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BDArmory"><HintPath>$(BDArmoryDll)</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+
+  <Target Name="CheckKSPReferences" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(KSPManaged)\Assembly-CSharp.dll')" Text="KSP assemblies not found in '$(KSPManaged)'. Pass -p:KSPDir=&quot;path\to\KSP&quot; or set the KSPDIR environment variable." />
+    <Error Condition="!Exists('$(BDArmoryDll)')" Text="BDArmory.dll not found at '$(BDArmoryDll)'. Pass -p:BDArmoryDll=&quot;path\to\BDArmory.dll&quot;." />
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using KSP.Localization;
-using BDArmory.Parts;
+using BDArmory.Weapons.Missiles;
 
 namespace AntiSubmarineWeapon
 {
@@ -21,7 +21,7 @@ namespace AntiSubmarineWeapon
             GameEvents.onHideUI.Add(HideUi);
         }
 
-        public void OnDestory()
+        public void OnDestroy()
         {
             GameEvents.onShowUI.Remove(ShowUi);
             GameEvents.onHideUI.Remove(HideUi);
@@ -39,7 +39,7 @@ namespace AntiSubmarineWeapon
 
         private void OnGUI()
         {
-            if (ModGlobal.LoadedSceneIsOn && ModGlobal.drawSettingsWindow && !_isHide)
+            if (ModGlobal.LoadedSceneIsOn && ModGlobal.drawSettingsWindow && !_isHide && FlightGlobals.ActiveVessel != null)
             {
                 settingsWindowRect = GUI.Window(976233, settingsWindowRect, DrawDepthContorllerWindow, Localizer.Format("#autoLOC_NAS_DepthSettings_title"));
             }
@@ -104,10 +104,13 @@ namespace AntiSubmarineWeapon
             var min = -1.0f;
             foreach (var current in FlightGlobals.ActiveVessel.Parts)
             {
+                if (current == null)
+                    continue;
+
                 var target =  current.GetComponent<ModuleAntiSubmarineWeapon>();
                 var missileLauncher = current.GetComponent<MissileLauncher>();
 
-                if (target == null || target.type != type || missileLauncher.HasFired)
+                if (target == null || target.type != type || missileLauncher == null || missileLauncher.HasFired)
                     continue;
 
                 min = target.maxDepth < min ? target.maxDepth : min;
