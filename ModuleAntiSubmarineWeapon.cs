@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using KSP.Localization;
 using UnityEngine;
-using BDArmory.Parts;
+using BDArmory.Weapons;
+using BDArmory.Weapons.Missiles;
 
 namespace AntiSubmarineWeapon
 {
@@ -21,6 +23,10 @@ namespace AntiSubmarineWeapon
 
         [KSPField(isPersistant = false)]
         public float volum;
+
+        // NAS part configs spell this key "volume"; accept both spellings.
+        [KSPField(isPersistant = false)]
+        public float volume = -1;
 
         [KSPField(isPersistant = false)]
         public float buoyancyForce;
@@ -85,6 +91,9 @@ namespace AntiSubmarineWeapon
         [KSPField(isPersistant = false)]
         public float recognitionAccuracy;
 
+        private const float MinDetonationDepth = 25f; // matches the UI_FloatRange minimum below
+        private const float MinCruiseDepth = 1f;
+
         private AswData _data;
         private BombSystem _bomb;
         private Buoyancy _buoyancy;
@@ -95,18 +104,27 @@ namespace AntiSubmarineWeapon
         private UI_Control _depthField;
         private MissileLauncher _missileLauncher;
         private Rigidbody _partRigidbodyValue;
-        
+        private bool _waitingForArmingLogged;
+        private bool _cfgIsTimed;
+        private bool _missCancelLogged;
+        private List<BDWarheadBase> _warheads;
+
         private Rigidbody PartRigidbody
         {
             get
             {
                 if (!_partRigidbodyValue)
-                    _partRigidbodyValue = part.GetComponent<Rigidbody>();
+                    _partRigidbodyValue = part.rb != null ? part.rb : part.GetComponent<Rigidbody>();
                 return _partRigidbodyValue;
             }
         }
-        
-        private float Height => (float)vessel.mainBody.GetAltitude(vessel.GetWorldPos3D());
+
+        // Altitude of this part (not the vessel root), so it is also correct before the weapon separates.
+        private float Height => (float)vessel.mainBody.GetAltitude(part.transform.position);
+
+        private Vector3 UpAxis => FlightGlobals.getUpAxis(vessel.mainBody, part.transform.position);
+
+        private float VolumeValue => volum != 0 ? volum : volume;
 
         [KSPField(isPersistant = true, guiActive = false, guiActiveEditor = false, guiName = "Destroy Depth"),
          UI_FloatRange(controlEnabled = true, maxValue = 500, minValue = 25, scene = UI_Scene.All, stepIncrement = 1f)]
@@ -130,15 +148,17 @@ namespace AntiSubmarineWeapon
                     _bomb.Ran();
 
                     _buoyancy = new Buoyancy();
-                    _buoyancy.BuoyancyDataWrite(volumebuoyancy,volum,buoyancyForce);
+                    _buoyancy.BuoyancyDataWrite(volumebuoyancy,VolumeValue,buoyancyForce);
 
                     _rota = new RotationSystem();
                     _rota.RotationData(airMaxTorque, waterMaxTorque, airCocf, waterCocf);
 
-                    _missileLauncher = GetComponent<MissileLauncher>();
+                    _missileLauncher = part.FindModuleImplementing<MissileLauncher>();
                     if(_missileLauncher == null)
-                        Debug.LogError("Failed when find the MissileLauncher!");
-                
+                        Debug.LogError("[NAS-ASW] Failed to find the MissileLauncher on " + part.partInfo?.name);
+                    else
+                        _cfgIsTimed = _missileLauncher.isTimed;
+
                     _depthField = Fields["autoDestroyDepth"].uiControlFlight;
 
                     Fields["cruiseDepth"].guiActive = false;
@@ -149,6 +169,9 @@ namespace AntiSubmarineWeapon
 
                     ((UI_FloatRange)Fields["autoDestroyDepth"].uiControlEditor).maxValue = maxDepth;
                     ((UI_FloatRange)Fields["autoDestroyDepth"].uiControlFlight).maxValue = maxDepth;
+
+                    // Keep the per-part depth from the PAW/craft file; only clamp it into the valid range.
+                    autoDestroyDepth = Mathf.Clamp(autoDestroyDepth, Mathf.Min(MinDetonationDepth, maxDepth), maxDepth);
                     break;
                 case "Torpedo":
                     _pida = new PidSystem();
@@ -157,14 +180,16 @@ namespace AntiSubmarineWeapon
                     _pidt.PidDataWrite(maxTorque.x, pidTorqueInfo.x, pidTorqueInfo.y, pidTorqueInfo.z);
 
                     _buoyancy = new Buoyancy();
-                    _buoyancy.BuoyancyDataWrite(volumebuoyancy, volum, buoyancyForce);
+                    _buoyancy.BuoyancyDataWrite(volumebuoyancy, VolumeValue, buoyancyForce);
 
                     _rota = new RotationSystem();
                     _rota.RotationData(airMaxTorque, waterMaxTorque, airCocf, waterCocf);
 
-                    _missileLauncher = GetComponent<MissileLauncher>();
+                    _missileLauncher = part.FindModuleImplementing<MissileLauncher>();
                     if (_missileLauncher == null)
-                        Debug.LogError("Failed when find the MissileLauncher!");
+                        Debug.LogError("[NAS-ASW] Failed to find the MissileLauncher on " + part.partInfo?.name);
+                    else
+                        _cfgIsTimed = _missileLauncher.isTimed;
 
                     Fields["autoDestroyDepth"].guiActive = false;
                     Fields["autoDestroyDepth"].guiActiveEditor = false;
@@ -174,64 +199,111 @@ namespace AntiSubmarineWeapon
 
                     ((UI_FloatRange)Fields["cruiseDepth"].uiControlEditor).maxValue = maxDepth - 2;
                     ((UI_FloatRange)Fields["cruiseDepth"].uiControlFlight).maxValue = maxDepth - 2;
+
+                    cruiseDepth = Mathf.Clamp(cruiseDepth, MinCruiseDepth, Mathf.Max(MinCruiseDepth, maxDepth - 2));
                     break;
                 default:
-                    Debug.LogWarning("[NAS-ASW]Neither depth charge nor torpedo!");
+                    Debug.LogWarning("[NAS-ASW]Neither depth charge nor torpedo! (" + part.partInfo?.name + ")");
                     break;
             }
-
-            autoDestroyDepth = ModUiManager.setAllDepthCharges;
-            cruiseDepth = ModUiManager.setAllTorpedos;
+            // NAS 0.7.0 overwrote both depths here with the toolbar window's values, which discarded the
+            // per-part setting from the editor. The toolbar window still sets every unfired weapon when moved.
         }
 
         public override void OnUpdate()
         {
             base.OnUpdate();
-            
+
+            if (_data == null || !HighLogic.LoadedSceneIsFlight || vessel == null || _missileLauncher == null) return;
+            if (!_missileLauncher.HasFired || _missileLauncher.HasExploded) return;
+
+            CancelMissSelfDestruct();
+
             if (_data.Type != "DepthCharge") return;
-            if (!HighLogic.LoadedSceneIsFlight) return;
-            if (!_missileLauncher.HasFired) return;
-            
-            if (_depthField.controlEnabled)
+
+            if (_depthField != null && _depthField.controlEnabled)
                 _depthField.controlEnabled = false;
-            
-            if (!_bomb.Bomb(Height, autoDestroyDepth)) return;
-            
-            Debug.Log("DepthCharge Bombed At " + Height + "m on " + vessel.mainBody.name);
+
+            var height = Height;
+            if (!_bomb.Bomb(height, autoDestroyDepth)) return;
+
+            // BDArmory 1.13 keeps a missile warhead disarmed until it is 1.25x its blast radius away from the
+            // launching vessel, and Detonate() on a disarmed warhead deletes the charge without an explosion.
+            // Keep sinking until armed; BDArmory's altitude fuze (altitudeFuzeMode in the part cfg) is the backstop.
+            if (!WarheadsArmed())
+            {
+                if (!_waitingForArmingLogged)
+                {
+                    Debug.Log("[NAS-ASW] DepthCharge reached " + height + "m but is not armed yet (too close to the launching vessel); waiting.");
+                    _waitingForArmingLogged = true;
+                }
+                return;
+            }
+
+            Debug.Log("DepthCharge Bombed At " + height + "m on " + vessel.mainBody.name);
             _missileLauncher.Detonate();
-            part.temperature = part.maxTemp * 2;
+        }
+
+        // BDArmory 1.13 runs its missile "miss" check on unguided weapons too: once the weapon points away from, or
+        // passes, the dummy target it places 5 km ahead of the launch point, it is flagged as missed and self-destructs
+        // 1.5 s later (MissileBase.isTimed/detonationTime). For a depth charge that can happen right after it enters the
+        // water. NAS weapons have their own fuzes (depth fuze, contact, BDArmory altitude fuze), so cancel that timer
+        // unless the part config itself asked for a timed fuze.
+        private void CancelMissSelfDestruct()
+        {
+            if (_cfgIsTimed || !_missileLauncher.HasMissed || !_missileLauncher.isTimed) return;
+            _missileLauncher.isTimed = false;
+            if (!_missCancelLogged)
+            {
+                Debug.Log("[NAS-ASW] Cancelled BDArmory miss self-destruct for " + _data.Type + " " + part.partInfo?.name);
+                _missCancelLogged = true;
+            }
+        }
+
+        private bool WarheadsArmed()
+        {
+            // Called every frame while a charge waits to be armed; FindModulesImplementing allocates a new list
+            // per call and a part's modules do not change, so look them up once.
+            if (_warheads == null)
+                _warheads = part.FindModulesImplementing<BDWarheadBase>();
+            var warheads = _warheads;
+            for (int i = 0; i < warheads.Count; i++)
+            {
+                if (warheads[i] != null && !warheads[i].Armed)
+                    return false;
+            }
+            return true;
         }
 
         public override void OnFixedUpdate()
         {
             base.OnFixedUpdate();
+            if (_data == null || !HighLogic.LoadedSceneIsFlight || vessel == null || PartRigidbody == null) return;
+            // Only steer/float weapons that BDArmory has actually launched.
+            if (_missileLauncher == null || !_missileLauncher.HasFired || _missileLauncher.HasExploded) return;
+
+            var height = Height;
             switch (_data.Type)
             {
                 case "DepthCharge":
-                    if (HighLogic.LoadedSceneIsFlight)
-                    {
-                        if (_missileLauncher.HasFired)
-                        {
-                            if (Height<0)
-                                PartRigidbody.AddForce(FlightGlobals.getUpAxis() * _buoyancy.Force(Height).y);
-                            PartRigidbody.AddTorque(_rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, Height));
-                        }
-                    }
+                    if (height < 0)
+                        PartRigidbody.AddForce(UpAxis * _buoyancy.Force(height).y);
+                    PartRigidbody.AddTorque(_rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, height));
                     break;
                 case "Torpedo":
-                    if (vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()) < 0 &&
-                        vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()) > -Math.Abs(maxDepth))
+                    // zeroThrustSink (part cfg, default true; unused before): once the motor has burnt out, stop depth
+                    // keeping and buoyancy so the spent torpedo sinks instead of hovering at its cruise depth.
+                    if (zeroThrustSink && _missileLauncher.MissileState == MissileBase.MissileStates.PostThrust) break;
+                    if (height < 0 && height > -Math.Abs(maxDepth))
                     {
-                        var angle = _pida.PidControl(-cruiseDepth, (float) vessel.mainBody.GetAltitude(vessel.GetWorldPos3D()), TimeWarp.fixedDeltaTime);
-                        var torque = _pidt.PidControl(angle, 90 - Vector3.Angle(part.transform.forward, FlightGlobals.getUpAxis(part.transform.position)), TimeWarp.fixedDeltaTime);
-                        var horizonPitchAxis = Vector3.Cross(FlightGlobals.getUpAxis(transform.position), transform.forward).normalized;
-                        PartRigidbody.AddTorque(_rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, Height));
+                        var up = UpAxis;
+                        var angle = _pida.PidControl(-cruiseDepth, height, TimeWarp.fixedDeltaTime);
+                        var torque = _pidt.PidControl(angle, 90 - Vector3.Angle(part.transform.forward, up), TimeWarp.fixedDeltaTime);
+                        var horizonPitchAxis = Vector3.Cross(up, part.transform.forward).normalized;
+                        PartRigidbody.AddTorque(_rota.Torque(vessel.vesselTransform.forward, vessel.srf_velocity, height));
                         PartRigidbody.AddTorque(-horizonPitchAxis * torque);
-                        PartRigidbody.AddForce(FlightGlobals.getUpAxis() * _buoyancy.Force(Height).y);
+                        PartRigidbody.AddForce(up * _buoyancy.Force(height).y);
                     }
-                    break;
-                default:
-                    Debug.LogWarning("[NAS-ASW]Neither depth charge nor torpedo!");
                     break;
             }
         }

@@ -25,9 +25,18 @@ namespace AntiSubmarineWeapon
             GameEvents.onGUIApplicationLauncherReady.Add(OnLauncherReady);
         }
 
+        public void Start()
+        {
+            // The launcher may already be ready when this addon starts.
+            if (ApplicationLauncher.Ready)
+                OnLauncherReady();
+        }
+
         public void OnDestroy()
         {
-            if (btn != null)
+            GameEvents.onGUIApplicationLauncherReady.Remove(OnLauncherReady);
+
+            if (btn != null && ApplicationLauncher.Instance != null)
             {
                 ApplicationLauncher.Instance.RemoveModApplication(btn);
             }

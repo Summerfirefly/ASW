@@ -32,5 +32,10 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.6.5.2")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.6.6.0")]
+[assembly: AssemblyFileVersion("0.6.6.0")]
+[assembly: AssemblyInformationalVersion("0.6.6.0 (KSP 1.12.x, BDArmory Plus 1.13)")]
+
+// KSP load-order metadata: load after BDArmory (BDArmory declares KSPAssembly("BDArmory", 1, 0)).
+[assembly: KSPAssembly("AntiSubmarineWeapon", 0, 6, 6)]
+[assembly: KSPAssemblyDependency("BDArmory", 1, 0)]
