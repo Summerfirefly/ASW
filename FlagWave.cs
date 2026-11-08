@@ -74,6 +74,23 @@ namespace AntiSubmarineWeapon
 
         private static Vector3[] GetVertices(MeshFilter mf) => mf != null ? mf.mesh.vertices : null;
 
+        // MeshFilter.mesh (in GetVertices and Wave) gives each flag its own copy of the shared mesh. Unity does
+        // not free such copies when the part is destroyed, so keep them and destroy them in OnDestroy.
+        private Mesh[] ownedMeshes;
+
+        private static Mesh GetOwnedMesh(MeshFilter mf) => mf != null ? mf.mesh : null;
+
+        private void OnDestroy()
+        {
+            if (ownedMeshes == null) return;
+            for (int i = 0; i < ownedMeshes.Length; i++)
+            {
+                if (ownedMeshes[i] != null)
+                    Destroy(ownedMeshes[i]);
+            }
+            ownedMeshes = null;
+        }
+
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
@@ -88,6 +105,7 @@ namespace AntiSubmarineWeapon
             flagVertex2 = GetVertices(flagMesh2);
             flagmVertex1 = GetVertices(flagmMesh1);
             flagmVertex2 = GetVertices(flagmMesh2);
+            ownedMeshes = new[] { GetOwnedMesh(flagMesh1), GetOwnedMesh(flagMesh2), GetOwnedMesh(flagmMesh1), GetOwnedMesh(flagmMesh2) };
             if (flagMesh1 == null && flagMesh2 == null && flagmMesh1 == null && flagmMesh2 == null)
                 Debug.LogWarning("[NAS-ASW] FlagWave: no flag meshes found on " + part.partInfo?.name);
         }

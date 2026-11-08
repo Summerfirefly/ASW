@@ -15,6 +15,22 @@ namespace AntiSubmarineWeapon
 
         public static Rect settingsWindowRect = new Rect(100, 100, 400, 80);
 
+        // "N m" labels, rebuilt only when the value changes (OnGUI runs several times per frame).
+        private static int _depthChargesLabelValue = int.MinValue;
+        private static string _depthChargesLabel;
+        private static int _torpedosLabelValue = int.MinValue;
+        private static string _torpedosLabel;
+
+        private static string DepthLabel(int value, ref int labelValue, ref string label)
+        {
+            if (label == null || value != labelValue)
+            {
+                labelValue = value;
+                label = value.ToString() + " m";
+            }
+            return label;
+        }
+
         public void Awake()
         {
             GameEvents.onShowUI.Add(ShowUi);
@@ -58,7 +74,7 @@ namespace AntiSubmarineWeapon
             
             if (depthChargeMaxValue > 0)
             {
-                GUILayout.Label(setAllDepthCharges.ToString() + " m");
+                GUILayout.Label(DepthLabel(setAllDepthCharges, ref _depthChargesLabelValue, ref _depthChargesLabel));
                 setAllDepthCharges = (int)GUILayout.HorizontalScrollbar(
                     setAllDepthCharges, 2, 25,
                     depthChargeMaxValue + 2, GUILayout.MinWidth(100));
@@ -80,7 +96,7 @@ namespace AntiSubmarineWeapon
             GUILayout.FlexibleSpace();
             if (torpedoMaxValue > 0)
             {
-                GUILayout.Label(setAllTorpedos.ToString() + " m");
+                GUILayout.Label(DepthLabel(setAllTorpedos, ref _torpedosLabelValue, ref _torpedosLabel));
                 setAllTorpedos = (int)GUILayout.HorizontalScrollbar(setAllTorpedos, 2, 1, torpedoMaxValue, GUILayout.MinWidth(100));
                 if (setAllTorpedos != _setAllTorpedosTemp)
                 {

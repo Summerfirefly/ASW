@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using KSP.Localization;
 using UnityEngine;
 using BDArmory.Weapons;
@@ -106,6 +107,7 @@ namespace AntiSubmarineWeapon
         private bool _waitingForArmingLogged;
         private bool _cfgIsTimed;
         private bool _missCancelLogged;
+        private List<BDWarheadBase> _warheads;
 
         private Rigidbody PartRigidbody
         {
@@ -260,7 +262,11 @@ namespace AntiSubmarineWeapon
 
         private bool WarheadsArmed()
         {
-            var warheads = part.FindModulesImplementing<BDWarheadBase>();
+            // Called every frame while a charge waits to be armed; FindModulesImplementing allocates a new list
+            // per call and a part's modules do not change, so look them up once.
+            if (_warheads == null)
+                _warheads = part.FindModulesImplementing<BDWarheadBase>();
+            var warheads = _warheads;
             for (int i = 0; i < warheads.Count; i++)
             {
                 if (warheads[i] != null && !warheads[i].Armed)
